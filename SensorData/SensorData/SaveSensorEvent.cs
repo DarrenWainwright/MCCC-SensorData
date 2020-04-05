@@ -1,14 +1,14 @@
 // Default URL for triggering event grid function in the local environment.
 // http://localhost:7071/runtime/webhooks/EventGrid?functionName={functionname}
 
-using Microsoft.Azure.WebJobs;
+using System;
+using System.Dynamic;
 using Microsoft.Azure.EventGrid.Models;
+using Microsoft.Azure.WebJobs;
 using Microsoft.Azure.WebJobs.Extensions.EventGrid;
 using Microsoft.Extensions.Logging;
-using System;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-using System.Dynamic;
 
 namespace MCCC.Sensors.Data
 {
@@ -26,7 +26,7 @@ namespace MCCC.Sensors.Data
             Logger.Log(log, $"Function: {nameof(SaveSensorEvent)} started. Event Type {eventGridEvent.EventType}");
 
             var data = (JObject)eventGridEvent.Data;
-            
+
             dynamic sensor = new ExpandoObject();
             sensor.id = GetOrThrow(data, "sensor_id");
             sensor.name = GetOrThrow(data, "name");
