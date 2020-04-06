@@ -1,7 +1,6 @@
 // Default URL for triggering event grid function in the local environment.
 // http://localhost:7071/runtime/webhooks/EventGrid?functionName={functionname}
 
-using System;
 using System.Dynamic;
 using Microsoft.Azure.EventGrid.Models;
 using Microsoft.Azure.WebJobs;
@@ -10,7 +9,7 @@ using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
-namespace MCCC.Sensors.Data
+namespace SensorData
 {
     /// <summary>
     /// Stores the data subscribed to, from the sensors published events
@@ -23,29 +22,29 @@ namespace MCCC.Sensors.Data
                       collectionName: "SensorData",
                       ConnectionStringSetting = "AzureCosmosUrl")] IAsyncCollector<dynamic> sensors)
         {
-            Logger.Log(log, $"Function: {nameof(SaveSensorEvent)} started. Event Type {eventGridEvent.EventType}");
+            Common.Log(log, $"Function: {nameof(SaveSensorEvent)} started. Event Type {eventGridEvent.EventType}");
 
             var data = (JObject)eventGridEvent.Data;
 
             dynamic sensor = new ExpandoObject();
             sensor.id = eventGridEvent.Id;
-            sensor.sensorId = GetOrThrow(data, "sensor_id");
-            sensor.name = GetOrThrow(data, "name");
+            sensor.sensorId = Common.GetOrThrow(data, "sensor_id");
+            sensor.name = Common.GetOrThrow(data, "name");
 
             switch (eventGridEvent.EventType)
             {
                 case "TemperatureChangedEvent":
-                    sensor.celcius = GetOrThrow(data, "temperature_c");
-                    sensor.fahrenheit = GetOrThrow(data, "temperature_f");
+                    sensor.celcius = Common.GetOrThrow(data, "temperature_c");
+                    sensor.fahrenheit = Common.GetOrThrow(data, "temperature_f");
                     break;
                 case "HumidityChangedEvent":
-                    sensor.humidity = GetOrThrow(data, "humidity");
+                    sensor.humidity = Common.GetOrThrow(data, "humidity");
                     break;
             }
 
-            Logger.Log(log, $"Sensor document ready for storage : { JsonConvert.SerializeObject(sensor) }");
+            Common.Log(log, $"Sensor document ready for storage : { JsonConvert.SerializeObject(sensor) }");
             sensors.AddAsync(sensor);
-            Logger.Log(log, "Data Stored. SaveSensorEvent complete");
+            Common.Log(log, "Data Stored. SaveSensorEvent complete");
 
             //TODO - Figure out why this will not work
             //outdated library?
@@ -57,12 +56,6 @@ namespace MCCC.Sensors.Data
             //};
         }
 
-        private static object GetOrThrow(JObject data, string v) => data.GetValue(v) ?? throw new ArgumentNullException($"Expected a {v} at data.{v}");
 
-        private static class Logger
-        {
-            public static void Log(ILogger log, string message) => log.LogInformation($"{DateTime.UtcNow}\t:\t{message}");
-
-        }
     }
 }
