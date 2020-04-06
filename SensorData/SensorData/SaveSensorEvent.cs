@@ -38,7 +38,7 @@ namespace MCCC.Sensors.Data
                     sensor.fahrenheit = GetOrThrow(data, "temperature_f");
                     break;
                 case "HumidityChangedEvent":
-                    sensor.humidity = (double)GetOrThrow(data, "humidity");
+                    sensor.humidity = GetOrThrow(data, "humidity");
                     break;
             }
 
