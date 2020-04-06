@@ -28,7 +28,8 @@ namespace MCCC.Sensors.Data
             var data = (JObject)eventGridEvent.Data;
 
             dynamic sensor = new ExpandoObject();
-            sensor.id = GetOrThrow(data, "sensor_id");
+            sensor.id = eventGridEvent.Id;
+            sensor.sensorId = GetOrThrow(data, "sensor_id");
             sensor.name = GetOrThrow(data, "name");
 
             switch (eventGridEvent.EventType)
