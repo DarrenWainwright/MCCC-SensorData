@@ -1,2 +1,5 @@
-# MCCC-StoreSensorData
-Stores all MCCC sensor data received
+# MCCC Sensor data functions
+
+
+
+...coming soon...
