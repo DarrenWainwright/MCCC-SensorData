@@ -3,15 +3,11 @@
 using System;
 using System.Dynamic;
 using System.Net.Http;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.Azure.EventGrid.Models;
 using Microsoft.Azure.WebJobs;
 using Microsoft.Azure.WebJobs.Extensions.EventGrid;
 using Microsoft.Extensions.Logging;
-using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-using SensorData.Models;
 
 namespace SensorData.Command
 {
@@ -24,14 +20,13 @@ namespace SensorData.Command
         /// <param name="log"></param>
         /// <param name="sensors"></param>
         [FunctionName(nameof(SaveLocalWeather))]
-        public static async Task<IActionResult> Run([EventGridTrigger]EventGridEvent eventGridEvent, ILogger log,
+        public static async void Run([EventGridTrigger]EventGridEvent eventGridEvent, ILogger log,
                                 [CosmosDB(databaseName: "MotherCluckers",
                                           collectionName: "WeatherData",
                                           ConnectionStringSetting = "AzureCosmosUrl")] IAsyncCollector<dynamic> weathers)
         {
             Common.Log(log, $"Function: {nameof(SaveSensorEvent)} started. Event Type {eventGridEvent.EventType}");
 
-            IActionResult result;
             string weatherEndpoint = $"{Environment.GetEnvironmentVariable("WeatherApiBase")}?q={Environment.GetEnvironmentVariable("WeatherApiLocation")}&units=metric&appid={Environment.GetEnvironmentVariable("WeatherApiKey")}";
 
             try
@@ -55,23 +50,20 @@ namespace SensorData.Command
                     weather.celcius = responseContent["main"]["temp"].Value<double>();
                     weather.fahrenheit = ((9.0 / 5.0) * weather.celcius) + 32;
                     weather.humidity = responseContent["main"]["humidity"].Value<double>();
-
+                    weather.dateCreated = eventGridEvent.EventTime;
                     weathers.AddAsync(weather);
-                    result = new OkObjectResult(weather);
                     Common.Log(log, $"Weather document stored");
                 }
                 else
                 {
-                    result = new BadRequestObjectResult(new Error($"Could not retrieve weather. {JsonConvert.SerializeObject(responseContent)}"));
                     Common.Log(log, $"Failed to fetch weather data. {response.StatusCode}. {responseContent}");
                 }
             }
             catch (Exception ex)
             {
-                result = new BadRequestObjectResult(new Error($"Could not save weather data {ex.Message}"));
+                throw new InvalidOperationException(ex.Message, ex);
             }
 
-            return result;
         }
     }
 }

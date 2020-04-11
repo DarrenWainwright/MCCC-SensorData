@@ -25,7 +25,7 @@ namespace SensorData
                 CosmosClientBuilder cosmosClientBuilder = new CosmosClientBuilder(config["AzureCosmosUrl"]);
 
                 return cosmosClientBuilder.WithConnectionModeDirect()
-                    .WithBulkExecution(true)
+                    //.WithBulkExecution(true)
                     .Build();
             });
 
