@@ -2,12 +2,13 @@
 // http://localhost:7071/runtime/webhooks/EventGrid?functionName={functionname}
 
 using System;
-using System.Dynamic;
+using System.Threading.Tasks;
 using Microsoft.Azure.EventGrid.Models;
 using Microsoft.Azure.WebJobs;
 using Microsoft.Azure.WebJobs.Extensions.EventGrid;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json.Linq;
+using SensorData.Model;
 
 namespace SensorData.Command
 {
@@ -17,33 +18,27 @@ namespace SensorData.Command
     public static class SaveSensorEvent
     {
         [FunctionName(nameof(SaveSensorEvent))]
-        public static async void Run([EventGridTrigger]EventGridEvent eventGridEvent, ILogger log,
+        public static async Task Run([EventGridTrigger]EventGridEvent eventGridEvent, ILogger log,
             [CosmosDB(databaseName: "MotherCluckers",
                       collectionName: "SensorData",
-                      ConnectionStringSetting = "AzureCosmosUrl")] IAsyncCollector<dynamic> sensors)
+                      ConnectionStringSetting = "AzureCosmosUrl")] IAsyncCollector<IDHT22> sensors)
         {
             Common.Log(log, $"Function: {nameof(SaveSensorEvent)} started. Event Type {eventGridEvent.EventType}");
 
             try
             {
                 var data = (JObject)eventGridEvent.Data;
-                dynamic sensor = new ExpandoObject();
-                sensor.id = eventGridEvent.Id;
-                sensor.sensorId = Common.GetOrThrow(data, "sensor_id");
-                sensor.name = Common.GetOrThrow(data, "name");
-                sensor.dateCreated = eventGridEvent.EventTime;
 
-                switch (eventGridEvent.EventType)
+                IDHT22 sensor = eventGridEvent.EventType switch
                 {
-                    case "TemperatureChangedEvent":
-                        sensor.celcius = Common.GetOrThrow(data, "temperature_c");
-                        sensor.fahrenheit = Common.GetOrThrow(data, "temperature_f");
-                        break;
-                    case "HumidityChangedEvent":
-                        sensor.humidity = Common.GetOrThrow(data, "humidity");
-                        break;
-                }
-                sensors.AddAsync(sensor);
+                    "TemperatureChangedEvent" => new TemperatureSensorEvent(data["sensor_id"].Value<string>(), data["name"].Value<string>(), data["temperature_c"].Value<double>()),
+                    "HumidityChangedEvent" => new HumiditySensorEvent(data["sensor_id"].Value<string>(), data["name"].Value<string>(), data["humidity"].Value<double>()),
+                    _ => throw new InvalidOperationException($"Event type {eventGridEvent.EventType} unsupported")
+                };
+
+                if (sensor != null)
+                    await sensors.AddAsync(sensor);
+
 
             }
             catch (System.Exception ex)

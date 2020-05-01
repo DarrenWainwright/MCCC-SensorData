@@ -4,12 +4,14 @@
 using System;
 using System.Dynamic;
 using System.Linq;
+using System.Threading.Tasks;
 using Microsoft.Azure.Cosmos;
 using Microsoft.Azure.EventGrid.Models;
 using Microsoft.Azure.WebJobs;
 using Microsoft.Azure.WebJobs.Extensions.EventGrid;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
+using SensorData.Model;
 
 namespace SensorData.Command
 {
@@ -33,7 +35,7 @@ namespace SensorData.Command
         }
 
         [FunctionName(nameof(SaveSensorHeartbeat))]
-        public async void Run([EventGridTrigger]EventGridEvent eventGridEvent)
+        public async Task Run([EventGridTrigger]EventGridEvent eventGridEvent)
         {
             Common.Log(_logger, $"Function: {nameof(SaveSensorHeartbeat)} started. Event Type {eventGridEvent.EventType}");
 
@@ -46,26 +48,15 @@ namespace SensorData.Command
                 QueryDefinition queryDefinition = new QueryDefinition("SELECT * FROM s where Lower(s.name) = @name AND Lower(s.type) = @type")
                                                                     .WithParameter("@name", data.name.ToLower())
                                                                     .WithParameter("@type", data.type.ToLower());
-                var query = _container.GetItemQueryIterator<ExpandoObject>(queryDefinition);
-                dynamic sensor = (await query.ReadNextAsync()).FirstOrDefault();
+                var query = _container.GetItemQueryIterator<Heartbeat>(queryDefinition);
+                var sensor = (await query.ReadNextAsync()).FirstOrDefault();
 
                 if (sensor == null)
-                {
-                    Common.Log(_logger, "No sensor found. Create one.");
-                    // create one
-                    sensor = new ExpandoObject();
-                    sensor.id = Guid.NewGuid();
-                    sensor.name = data.name;
-                    sensor.type = data.type;
-                    sensor.heartbeatInterval = data.heartbeat_interval;
-                    sensor.lastConnected = DateTime.UtcNow;
-                }
+                    sensor = new Heartbeat(data.name, data.type, (int)data.heartbeat_interval);
                 else
                 {
-                    Common.Log(_logger, "Sensor found. Update last connected");
-                    //update one.
-                    sensor.heartbeatInterval = data.heartbeat_interval;
-                    sensor.lastConnected = DateTime.UtcNow;
+                    sensor.HeartbeatInterval = (int)data.heartbeat_interval;
+                    sensor.LastConnected = DateTime.UtcNow;
                 }
 
                 await _container.UpsertItemAsync(sensor);

@@ -9,7 +9,7 @@ namespace SensorData.Model
             Id = id;
             Name = name;
             Type = type;
-            HearbeatInterval = hearbeatInterval;
+            HeartbeatInterval = hearbeatInterval;
             LastHeartbeat = lastHeartbeat;
         }
 
@@ -18,7 +18,7 @@ namespace SensorData.Model
             Id = id;
             Name = name;
             Type = type;
-            HearbeatInterval = hearbeatInterval;
+            HeartbeatInterval = hearbeatInterval;
             LastHeartbeat = DateTime.Parse(jsonLastHeartbeat);
         }
 
@@ -26,7 +26,7 @@ namespace SensorData.Model
         public string Id { get; }
         public string Name { get; }
         public string Type { get; }
-        public int HearbeatInterval { get; }
+        public int HeartbeatInterval { get; }
         public DateTime LastHeartbeat { get; }
     }
 }

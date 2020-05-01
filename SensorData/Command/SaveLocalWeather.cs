@@ -1,13 +1,14 @@
 // Default URL for triggering event grid function in the local environment.
 // http://localhost:7071/runtime/webhooks/EventGrid?functionName={functionname}
 using System;
-using System.Dynamic;
 using System.Net.Http;
+using System.Threading.Tasks;
 using Microsoft.Azure.EventGrid.Models;
 using Microsoft.Azure.WebJobs;
 using Microsoft.Azure.WebJobs.Extensions.EventGrid;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json.Linq;
+using SensorData.Model;
 
 namespace SensorData.Command
 {
@@ -20,10 +21,10 @@ namespace SensorData.Command
         /// <param name="log"></param>
         /// <param name="sensors"></param>
         [FunctionName(nameof(SaveLocalWeather))]
-        public static async void Run([EventGridTrigger]EventGridEvent eventGridEvent, ILogger log,
+        public static async Task Run([EventGridTrigger]EventGridEvent eventGridEvent, ILogger log,
                                 [CosmosDB(databaseName: "MotherCluckers",
                                           collectionName: "WeatherData",
-                                          ConnectionStringSetting = "AzureCosmosUrl")] IAsyncCollector<dynamic> weathers)
+                                          ConnectionStringSetting = "AzureCosmosUrl")] IAsyncCollector<WeatherDocument> weathers)
         {
             Common.Log(log, $"Function: {nameof(SaveSensorEvent)} started. Event Type {eventGridEvent.EventType}");
 
@@ -40,19 +41,11 @@ namespace SensorData.Command
 
                     Common.Log(log, $"Have weaher data, preparing to store");
 
-                    var eventData = (JObject)eventGridEvent.Data;
+                    var weather = new WeatherDocument(Environment.GetEnvironmentVariable("WeatherApiLocation")
+                                                     , responseContent["main"]["temp"].Value<double>()
+                                                     , responseContent["main"]["humidity"].Value<double>());
 
-                    dynamic weather = new ExpandoObject();
-                    weather.id = Guid.NewGuid().ToString();
-                    weather.location = Environment.GetEnvironmentVariable("WeatherApiLocation");
-                    weather.triggerEvent = eventGridEvent.EventType;
-                    weather.triggerSensor = Common.GetOrThrow(eventData, "sensor_id");
-                    weather.celcius = responseContent["main"]["temp"].Value<double>();
-                    weather.fahrenheit = ((9.0 / 5.0) * weather.celcius) + 32;
-                    weather.humidity = responseContent["main"]["humidity"].Value<double>();
-                    weather.dateCreated = eventGridEvent.EventTime;
                     weathers.AddAsync(weather);
-                    Common.Log(log, $"Weather document stored");
                 }
                 else
                 {
