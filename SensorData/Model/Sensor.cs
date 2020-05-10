@@ -13,16 +13,6 @@ namespace SensorData.Model
             LastHeartbeat = lastHeartbeat;
         }
 
-        public Sensor(string id, string name, string type, int hearbeatInterval, string jsonLastHeartbeat)
-        {
-            Id = id;
-            Name = name;
-            Type = type;
-            HeartbeatInterval = hearbeatInterval;
-            LastHeartbeat = DateTime.Parse(jsonLastHeartbeat);
-        }
-
-
         public string Id { get; }
         public string Name { get; }
         public string Type { get; }

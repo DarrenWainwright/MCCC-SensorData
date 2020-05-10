@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
@@ -24,7 +25,7 @@ namespace SensorData.Query
 
         [FunctionName(nameof(GetSensors))]
         public async Task<IActionResult> Run(
-            [HttpTrigger(AuthorizationLevel.Function, "get", Route = null)] HttpRequest req)
+            [HttpTrigger(AuthorizationLevel.Function, "get", Route = "sensors")] HttpRequest req)
         {
             Common.Log(_logger, $"Function: {nameof(GetSensors)} started with a HTTP Trigger");
 
@@ -37,7 +38,7 @@ namespace SensorData.Query
                 //Asynchronous query execution
                 while (iterator.HasMoreResults)
                     foreach (var item in await iterator.ReadNextAsync())
-                        results.Add(new Model.Sensor((string)item.id, (string)item.name, (string)item.type, (int)item.heartbeatInterval, (string)item.lastConnected));
+                        results.Add(new Model.Sensor((string)item.id, (string)item.name, (string)item.type, (int)item.heartbeatInterval, (DateTime)item.lastConnected));
 
                 return new OkObjectResult(results);
             }

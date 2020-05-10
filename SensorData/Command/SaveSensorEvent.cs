@@ -31,7 +31,7 @@ namespace SensorData.Command
 
                 IDHT22 sensor = eventGridEvent.EventType switch
                 {
-                    "TemperatureChangedEvent" => new TemperatureSensorEvent(data["sensor_id"].Value<string>(), data["name"].Value<string>(), data["temperature_c"].Value<double>()),
+                    "TemperatureChangedEvent" => new TemperatureSensorEvent(data["sensor_id"].Value<string>(), data["name"].Value<string>(), data["temperature_c"].Value<double>(), data["temperature_f"].Value<double>()),
                     "HumidityChangedEvent" => new HumiditySensorEvent(data["sensor_id"].Value<string>(), data["name"].Value<string>(), data["humidity"].Value<double>()),
                     _ => throw new InvalidOperationException($"Event type {eventGridEvent.EventType} unsupported")
                 };

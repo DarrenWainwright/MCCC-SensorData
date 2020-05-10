@@ -21,13 +21,13 @@ namespace SensorData.Model
         [JsonProperty("dateCreated")]
         public DateTime DateCreated { get; set; }
 
-        public TemperatureSensorEvent(string sensorId, string name, double celcius)
+        public TemperatureSensorEvent(string sensorId, string name, double celcius, double fahrenheit)
         {
             Id = Guid.NewGuid().ToString();
             SensorId = sensorId;
             Name = name;
             Celcius = celcius;
-            Fahrenheit = ((9.0 / 5.0) * Celcius) + 32;
+            Fahrenheit = fahrenheit;
             DateCreated = DateTime.UtcNow;
         }
 
